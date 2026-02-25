@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>English Sentence Game</title>
+<style>
+body {
+  font-family: Arial;
+  background: #fff3e6;
+  text-align: center;
+  padding: 20px;
+}
+
+h1 { color: #990000; }
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background: green;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+input {
+  padding: 10px;
+  width: 60%;
+  font-size: 16px;
+}
+
+#wordBox {
+  font-size: 25px;
+  font-weight: bold;
+  color: blue;
+}
+
+#timer, #score, #playerName {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+#certificate {
+  border: 5px solid gold;
+  padding: 20px;
+  width: 70%;
+  margin: auto;
+  background: white;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 English Sentence Game</h1>
+
+<div id="nameBox">
+  <h2>Enter Your Name:</h2>
+  <input id="nameInput" placeholder="Your Name">
+  <br><br>
+  <button onclick="startGame()">Start Game</button>
+</div>
+
+<div id="gameArea" style="display:none;">
+  <h3 id="playerName"></h3>
+  <h2 id="wordBox">Click Start</h2>
+  <h3 id="timer">⏱ Time: 0</h3>
+  <h3 id="score">🏆 Score: 0</h3>
+
+  <button onclick="newWord()">Start / Next Question</button>
+  <br><br>
+
+  <input id="sentence" placeholder="Type your sentence here">
+  <br><br>
+
+  <button onclick="checkAnswer()">Check Answer</button>
+
+  <h2 id="result"></h2>
+  <h3 id="counter"></h3>
+</div>
+
+<!-- CERTIFICATE -->
+<div id="certificate">
+  <h1>🏅 Participation Certificate</h1>
+  <h2 id="certName"></h2>
+  <h3 id="certScore"></h3>
+  <p>Thank you for participating in English Sentence Game Competition.</p>
+</div>
+
+<button onclick="downloadCertificate()" id="downloadBtn" style="display:none;">Download Certificate</button>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+<script>
+let player = "";
+let words = ["discover","walk","run","swim","laugh","teach","ask","look","smile","push","roll","go","stand","drink"];
+let maxQuestions = 5;
+let questionCount = 0;
+let currentWord = "";
+let score = 0;
+let usedWords = [];
+
+let timer;
+let timeLimit = 30;
+let timeLeft = timeLimit;
+
+// Leaderboard
+let winners = JSON.parse(localStorage.getItem("winners")) || [];
+
+function startGame() {
+  player = document.getElementById("nameInput").value;
+  if (player === "") { alert("Enter your name"); return; }
+
+  document.getElementById("nameBox").style.display = "none";
+  document.getElementById("gameArea").style.display = "block";
+  document.getElementById("playerName").innerHTML = "Player: " + player;
+}
+
+function startTimer() {
+  timeLeft = timeLimit;
+  document.getElementById("timer").innerHTML = "⏱ Time: " + timeLeft;
+
+  timer = setInterval(function() {
+    timeLeft--;
+    document.getElementById("timer").innerHTML = "⏱ Time: " + timeLeft;
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      document.getElementById("result").innerHTML = "Time's Up!";
+      setTimeout(newWord, 1500);
+    }
+  }, 1000);
+}
+
+function getRandomWord() {
+  let available = words.filter(w => !usedWords.includes(w));
+  let w = available[Math.floor(Math.random() * available.length)];
+  usedWords.push(w);
+  return w;
+}
+
+function newWord() {
+  if (questionCount >= maxQuestions) { endGame(); return; }
+
+  clearInterval(timer);
+  currentWord = getRandomWord();
+  questionCount++;
+
+  document.getElementById("wordBox").innerHTML =
+    "Question " + questionCount + ": Use word - " + currentWord;
+  document.getElementById("sentence").value = "";
+  document.getElementById("counter").innerHTML =
+    questionCount + " / " + maxQuestions;
+
+  startTimer();
+}
+
+function checkAnswer() {
+  clearInterval(timer);
+  let s = document.getElementById("sentence").value.toLowerCase();
+
+  if (s.includes(currentWord) && s.length > 10) {
+    score++;
+    document.getElementById("result").innerHTML = "Correct!";
+  } else {
+    document.getElementById("result").innerHTML = "Wrong!";
+  }
+
+  document.getElementById("score").innerHTML = "Score: " + score;
+  setTimeout(newWord, 1500);
+}
+
+function endGame() {
+  document.getElementById("wordBox").innerHTML = "Game Over!";
+  document.getElementById("result").innerHTML = "Final Score: " + score + "/5";
+
+  // Save leaderboard
+  winners.push({name: player, score: score});
+  localStorage.setItem("winners", JSON.stringify(winners));
+
+  // Show certificate
+  document.getElementById("certificate").style.display = "block";
+  document.getElementById("downloadBtn").style.display = "block";
+  document.getElementById("certName").innerHTML = "This is awarded to: " + player;
+  document.getElementById("certScore").innerHTML = "Score: " + score + " / 5";
+}
+
+function downloadCertificate() {
+  html2canvas(document.getElementById("certificate")).then(canvas => {
+    let link = document.createElement("a");
+    link.download = player + "_certificate.png";
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+}
+</script>
+
+</body>
+</html>
