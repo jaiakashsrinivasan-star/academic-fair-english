@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>English Sentence Game</title>
+<title>English Sentence Game - Jaiakash</title>
+
 <style>
 body {
   font-family: Arial;
-  background: #fff3e6;
+  background: linear-gradient(to right, #fff3e6, #ffe0cc);
   text-align: center;
   padding: 20px;
 }
@@ -19,6 +20,11 @@ button {
   color: white;
   border: none;
   border-radius: 5px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: gray;
 }
 
 input {
@@ -45,6 +51,24 @@ input {
   margin: auto;
   background: white;
   display: none;
+  margin-top: 20px;
+}
+
+#leaderboardTable {
+  margin: auto;
+  margin-top: 20px;
+  background: white;
+}
+
+#celebration {
+  font-size: 40px;
+  display: none;
+  animation: pop 1s infinite alternate;
+}
+
+@keyframes pop {
+  from { transform: scale(1); }
+  to { transform: scale(1.2); }
 }
 </style>
 </head>
@@ -62,21 +86,21 @@ input {
 
 <div id="gameArea" style="display:none;">
   <h3 id="playerName"></h3>
-  <h2 id="wordBox">Click Start</h2>
+  <h2 id="wordBox"></h2>
   <h3 id="timer">⏱ Time: 0</h3>
   <h3 id="score">🏆 Score: 0</h3>
 
-  <button onclick="newWord()">Start / Next Question</button>
-  <br><br>
-
+  <br>
   <input id="sentence" placeholder="Type your sentence here">
   <br><br>
 
-  <button onclick="checkAnswer()">Check Answer</button>
+  <button onclick="checkAnswer()" id="checkBtn">Check Answer</button>
 
   <h2 id="result"></h2>
   <h3 id="counter"></h3>
 </div>
+
+<div id="celebration">🎉🎉 CONGRATULATIONS 🎉🎉</div>
 
 <!-- CERTIFICATE -->
 <div id="certificate">
@@ -88,34 +112,61 @@ input {
 
 <button onclick="downloadCertificate()" id="downloadBtn" style="display:none;">Download Certificate</button>
 
+<!-- LEADERBOARD -->
+<h2>🏆 Leaderboard</h2>
+<table border="2" id="leaderboardTable">
+  <tr>
+    <th>Rank</th>
+    <th>Name</th>
+    <th>Score</th>
+  </tr>
+</table>
+
+<!-- SOUNDS -->
+<audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
+<audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
+<audio id="gameOverSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <script>
 let player = "";
-let words = ["discover","walk","run","swim","laugh","teach","ask","look","smile","push","roll","go","stand","drink"];
+let timeLimit = 30;
 let maxQuestions = 5;
+
+let words = ["discover","walk","run","swim","laugh","teach","ask","look","smile","push","roll","go","stand","drink"];
 let questionCount = 0;
 let currentWord = "";
 let score = 0;
 let usedWords = [];
-
 let timer;
-let timeLimit = 30;
-let timeLeft = timeLimit;
+let timeLeft;
 
-// Leaderboard
 let winners = JSON.parse(localStorage.getItem("winners")) || [];
 
 function startGame() {
   player = document.getElementById("nameInput").value;
   if (player === "") { alert("Enter your name"); return; }
 
+  questionCount = 0;
+  score = 0;
+  usedWords = [];
+  document.getElementById("score").innerHTML = "🏆 Score: 0";
+  document.getElementById("result").innerHTML = "";
+  document.getElementById("celebration").style.display = "none";
+  document.getElementById("certificate").style.display = "none";
+  document.getElementById("downloadBtn").style.display = "none";
+
   document.getElementById("nameBox").style.display = "none";
   document.getElementById("gameArea").style.display = "block";
   document.getElementById("playerName").innerHTML = "Player: " + player;
+
+  updateLeaderboard();
+  newWord();
 }
 
 function startTimer() {
+  clearInterval(timer);
   timeLeft = timeLimit;
   document.getElementById("timer").innerHTML = "⏱ Time: " + timeLeft;
 
@@ -125,7 +176,7 @@ function startTimer() {
 
     if (timeLeft <= 0) {
       clearInterval(timer);
-      document.getElementById("result").innerHTML = "Time's Up!";
+      document.getElementById("result").innerHTML = "⏰ Time's Up!";
       setTimeout(newWord, 1500);
     }
   }, 1000);
@@ -142,11 +193,14 @@ function newWord() {
   if (questionCount >= maxQuestions) { endGame(); return; }
 
   clearInterval(timer);
+  document.getElementById("checkBtn").disabled = false;
+
   currentWord = getRandomWord();
   questionCount++;
 
   document.getElementById("wordBox").innerHTML =
     "Question " + questionCount + ": Use word - " + currentWord;
+
   document.getElementById("sentence").value = "";
   document.getElementById("counter").innerHTML =
     questionCount + " / " + maxQuestions;
@@ -160,28 +214,58 @@ function checkAnswer() {
 
   if (s.includes(currentWord) && s.length > 10) {
     score++;
-    document.getElementById("result").innerHTML = "Correct!";
+    document.getElementById("result").innerHTML = "✅ Correct!";
+    document.getElementById("correctSound").play();
   } else {
-    document.getElementById("result").innerHTML = "Wrong!";
+    document.getElementById("result").innerHTML = "❌ Wrong!";
+    document.getElementById("wrongSound").play();
   }
 
-  document.getElementById("score").innerHTML = "Score: " + score;
+  document.getElementById("score").innerHTML = "🏆 Score: " + score;
+  document.getElementById("checkBtn").disabled = true;
+
   setTimeout(newWord, 1500);
 }
 
 function endGame() {
-  document.getElementById("wordBox").innerHTML = "Game Over!";
-  document.getElementById("result").innerHTML = "Final Score: " + score + "/5";
+  document.getElementById("wordBox").innerHTML = "🎉 Game Over!";
+  document.getElementById("result").innerHTML =
+    "Final Score: " + score + "/" + maxQuestions;
 
-  // Save leaderboard
+  document.getElementById("celebration").style.display = "block";
+  document.getElementById("gameOverSound").play();
+
   winners.push({name: player, score: score});
+  winners.sort((a,b)=>b.score-a.score);
   localStorage.setItem("winners", JSON.stringify(winners));
 
-  // Show certificate
   document.getElementById("certificate").style.display = "block";
   document.getElementById("downloadBtn").style.display = "block";
   document.getElementById("certName").innerHTML = "This is awarded to: " + player;
-  document.getElementById("certScore").innerHTML = "Score: " + score + " / 5";
+  document.getElementById("certScore").innerHTML = "Score: " + score + " / " + maxQuestions;
+
+  updateLeaderboard();
+}
+
+function updateLeaderboard() {
+  let table = document.getElementById("leaderboardTable");
+  table.innerHTML = `
+    <tr>
+      <th>Rank</th>
+      <th>Name</th>
+      <th>Score</th>
+    </tr>
+  `;
+
+  winners.forEach((w, index) => {
+    table.innerHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${w.name}</td>
+        <td>${w.score}</td>
+      </tr>
+    `;
+  });
 }
 
 function downloadCertificate() {
