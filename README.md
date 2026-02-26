@@ -50,7 +50,7 @@ The game checks grammar, spelling rules, and gives scores automatically.
 ## 🌐 Live Demo
 
 Game Link:  
-👉 https://yourusername.github.io/english-game-2026/
+👉 https://jaiakashsrinivasan-star.github.io/academic-fair-english/
 
 ---
 
@@ -62,5 +62,5 @@ This project is created for academic purpose in 2026 to help students improve En
 
 ## ✨ Created by
 
-**Jaya Akash**  
+**Jai Akash**  
 Class Project 2026
